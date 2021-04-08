@@ -5,17 +5,12 @@
 
 /chan_quectel.so
 
-/Makefile
 /aclocal.m4
 /autom4te.cache
-/compile
 /config.guess
-/config.h
 /config.log
 /config.status
 /config.sub
-/configure
-/install-sh
 /missing
 /stamp-h
 /stamp-h1
