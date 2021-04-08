@@ -1,6 +1,6 @@
-<a href="https://travis-ci.org/wdoekes/asterisk-chan-quectel">
+<a href="https://travis-ci.org/t4rd15/asterisk-chan-quectel">
   <img alt="Travis Build Status"
-       src="https://api.travis-ci.org/wdoekes/asterisk-chan-quectel.svg"/>
+       src="https://api.travis-ci.org/t4rd15/asterisk-chan-quectel.svg"/>
 </a>
 
 chan\_quectel channel driver for Quectel LTE cards
