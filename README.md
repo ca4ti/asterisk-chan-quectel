@@ -215,6 +215,6 @@ the version of speex provided by the depos does not support AGC.
 see: [HOWTO](https://gist.github.com/garronej/01f0dac45efe9161969a83890c019efa)
 
 
-For additional information about Huawei quectel usage look to
-chan\_quectel Wiki at http://wiki.e1550.mobi and chan\_quectel project home at
-https://github.com/wdoekes/asterisk-chan-quectel/
+For additional information about Huawei dongle usage look to
+chan\_dongle Wiki at http://wiki.e1550.mobi and chan\_quectel project home at
+https://github.com/t4rd15/asterisk-chan-quectel/
