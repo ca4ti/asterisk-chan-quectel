@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=asterisk15-chan-quectel
 #PKG_REV:=10
-PKG_VERSION:=1.1-20210410
+PKG_VERSION:=1.1-20210411
 #.r$(PKG_REV)
 PKG_RELEASE:=1
 
@@ -21,7 +21,7 @@ PKG_FIXUP:=autoreconf
 # or
 PKG_SOURCE:=chan_quectel-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL=https://github.com/t4rd15/asterisk-chan-quectel.git
-PKG_MD5SUM:=0b7495179f5ef7b7fc4b1bd6c82557b6275cb8ad
+PKG_MD5SUM:=d540e3b11b5bdbdaa4795d2e91a5377bd97c531a
 
 PKG_SOURCE_SUBDIR:=chan_quectel-$(PKG_VERSION)
 PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_SOURCE_SUBDIR)
