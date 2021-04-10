@@ -7,40 +7,41 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=asterisk18-chan-quectel
-PKG_REV:=10
-PKG_VERSION:=1.1.r$(PKG_REV)
-PKG_RELEASE:=18
+PKG_NAME:=asterisk15-chan-quectel
+#PKG_REV:=10
+PKG_VERSION:=1.1-20210410
+#.r$(PKG_REV)
+PKG_RELEASE:=1
 
 #PKG_SOURCE_URL:=http://asterisk-chan-quectel.googlecode.com/svn/trunk/
 #PKG_SOURCE_VERSION:=$(PKG_RELEASE)
 #PKG_SOURCE:=chan_quectel-$(PKG_VERSION).tar.gz
-#PKG_SOURCE_PROTO:=svn
-#PKG_FIXUP:=autoreconf
+PKG_SOURCE_PROTO:=git
+PKG_FIXUP:=autoreconf
 # or
-PKG_SOURCE:=chan_quectel-$(PKG_VERSION).tgz
-PKG_SOURCE_URL=http://asterisk-chan-quectel.googlecode.com/files/
-PKG_MD5SUM:=4ced3ab7094b62be2a0e843a2d4b4111
+PKG_SOURCE:=chan_quectel-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL=https://github.com/t4rd15/asterisk-chan-quectel.git
+PKG_MD5SUM:=0b7495179f5ef7b7fc4b1bd6c82557b6275cb8ad
 
 PKG_SOURCE_SUBDIR:=chan_quectel-$(PKG_VERSION)
 PKG_BUILD_DIR=$(BUILD_DIR)/$(PKG_SOURCE_SUBDIR)
 
-WITH_ASTERISK=asterisk-1.8.3.2
+WITH_ASTERISK=asterisk-15.3.0
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/asterisk18-chan-quectel
-	SUBMENU:=asterisk18 (Complete Open Source PBX), v1.8.x
+define Package/asterisk15-chan-quectel
+	SUBMENU:=asterisk15 (Complete Open Source PBX), v15.x
 	SECTION:=net
 	CATEGORY:=Network
 	URL:=http://www.asterisk.org/
 	MAINTAINER:=Hans Zandbelt <hans.zandbelt@gmail.com>
-	DEPENDS:= +asterisk18 +libiconv-full
-	TITLE:=Huawei UMTS 3G quectel support
+	DEPENDS:= +asterisk15 +libiconv-full
+	TITLE:=Quectel LTE cards support
 endef
 
-define Package/asterisk18-chan-quectel/description
-	Asterisk channel driver for Huawei UMTS 3G quectel
+define Package/asterisk15-chan-quectel/description
+	Asterisk channel driver for Quectel LTE cards
 endef
 
 MAKE_ARGS:= \
@@ -62,15 +63,15 @@ define Build/Compile
 	$(MAKE) -C "$(PKG_BUILD_DIR)" $(MAKE_ARGS) all install
 endef
 
-define Package/asterisk18-chan-quectel/conffiles
+define Package/asterisk15-chan-quectel/conffiles
 /etc/asterisk/quectel.conf
 endef
 
-define Package/asterisk18-chan-quectel/install
+define Package/asterisk15-chan-quectel/install
 	$(INSTALL_DIR) $(1)/etc/asterisk
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/etc/quectel.conf $(1)/etc/asterisk/
 	$(INSTALL_DIR) $(1)/usr/lib/asterisk/modules
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/lib/asterisk/modules/chan_quectel.so $(1)/usr/lib/asterisk/modules/
 endef
 
-$(eval $(call BuildPackage,asterisk18-chan-quectel))
+$(eval $(call BuildPackage,asterisk15-chan-quectel))
