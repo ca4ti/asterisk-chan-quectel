@@ -6,6 +6,9 @@
 chan\_quectel channel driver for Quectel LTE cards
 =================================================
 
+You can donate me on PayPal: spacedream@tutamail.com
+Thank you! :)    
+
 WARNING:
 
 This channel driver is in alpha stage.
