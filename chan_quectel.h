@@ -26,7 +26,7 @@
 #include "dc_config.h"				/* pvt_config_t */
 #include "at_command.h"
 
-#define MODULE_DESCRIPTION	"Huawei 3G Quectel Channel Driver"
+#define MODULE_DESCRIPTION	"Channel Driver for 2G 3G 4g Modules"
 #define MAXQUECTELDEVICES	128
 
 INLINE_DECL const char * dev_state2str(dev_state_t state)
