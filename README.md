@@ -1,56 +1,17 @@
-<a href="https://travis-ci.com/t4rd15/asterisk-chan-quectel">
-  <img alt="Travis Build Status"
-       src="https://api.travis-ci.com/t4rd15/asterisk-chan-quectel.svg"/>
-</a>
-
-chan\_quectel channel driver for Quectel LTE cards
+Channel driver for Quectel and Simcom modules 
 =================================================
 
-You can donate me on PayPal: spacedream@tutamail.com
-Thank you! :)    
-
-WARNING:
-
-This channel driver is in alpha stage.
-I am not responsible if this channel driver will eat your money on
-your SIM card or do any unpredicted things.
-
-Please use a recent Linux kernel, 2.6.33+ recommended.
-If you use FreeBSD, 8.0+ recommended.
-
-This channel driver should work with the folowing PCIe cards:
-* Quectel EC25-A
-* Quectel EC25-AF
-* ...
-
-Check for details here:
-https://forum.gl-inet.com/t/gl-mifi-ec25-af-asterisk-voice-channel/
-
-Before using the channel driver make sure to:
-* Disable PIN code on your SIM card
-
-Supported features:
-* Place voice calls and terminate voice calls
-* Send SMS and receive SMS
-* Send and receive USSD commands / messages
-
-Some useful AT commands:
-
-    AT+CCWA=0,0,1                   #disable call-waiting
-    AT+CFUN=1,1                     #reset quectel
-    AT^CARDLOCK="<code>"            #unlock code
-    AT^SYSCFG=13,0,3FFFFFFF,0,3     #modem 2G only, automatic search any band, no roaming
-    AT^U2DIAG=0                     #enable modem function
+This write-up may help those interested in improving this driver and supporting other modules such as Telit, U-blox, Sierra Wireless etc.
 
 Building:
 ----------
 
     $ ./bootstrap
-    $ ./configure --with-astversion=13.7
+    $ ./configure --with-astversion=16.20
     $ make
 
 If you run a different version of Asterisk, you'll need to update the
-`13.7` as appropriate, obviously.
+`16.20` as appropriate, obviously.
 
 If you did not `make install` Asterisk in the usual location and configure
 cannot find the asterisk header files in `/usr/include/asterisk`, you may
