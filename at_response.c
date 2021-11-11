@@ -613,26 +613,91 @@ static int at_response_orig (struct pvt* pvt, const char* str)
 {
 	int call_index;
 	int call_type;
-	struct cpvt * cpvt = pvt->last_dialed_cpvt;
 
+        if (sscanf (str, "^DSCI:%d,%*d,3,%d,%*s", &call_index, &call_type) == 2 && call_type == 0)
+        {
+	struct cpvt * cpvt;
+
+	request_clcc(pvt);
+
+	pvt->ring = 0;
+	pvt->dialing = 0;
+	pvt->cwaiting = 0;
+
+
+	ast_debug (1, "[%s] CONN Received call_index %d call_type %d\n", PVT_ID(pvt), call_index, call_type);
+
+	if (call_type == CLCC_CALL_TYPE_VOICE)
+	{
+		cpvt = pvt_find_cpvt(pvt, call_index);
+		if(cpvt)
+		{
+/* FIXME: delay until CLCC handle?
+*/
+			PVT_STAT(pvt, calls_answered[cpvt->dir]) ++;
+			change_channel_state(cpvt, CALL_STATE_ACTIVE, 0);
+			if(CPVT_TEST_FLAG(cpvt, CALL_FLAG_CONFERENCE))
+				at_enqueue_conference(cpvt);
+		}
+		else
+		{
+			at_enqueue_hangup(&pvt->sys_chan, call_index);
+			ast_log (LOG_ERROR, "[%s] answered incoming call with not exists call idx %d, hanging up!\n", PVT_ID(pvt), call_index);
+		}
+	}
+	else
+		ast_log (LOG_ERROR, "[%s] answered not voice incoming call type '%d' idx %d, skipped\n", PVT_ID(pvt), call_type, call_index);
+	return 0;
+        }
+        
+        if (sscanf (str, "^DSCI:%d,%*d,6,%d,%*s", &call_index, &call_type) == 2 && call_type == 0)
+        {
+	int duration   = 0;
+	int end_status = 0;
+	int cc_cause   = 0;
+	struct cpvt * cpvt;
+
+	request_clcc(pvt);
+
+
+	ast_debug (1,	"[%s] CEND: call_index %d duration %d end_status %d cc_cause %d Line disconnected\n"
+				, PVT_ID(pvt), call_index, duration, end_status, cc_cause);
+
+	cpvt = pvt_find_cpvt(pvt, call_index);
+	if (cpvt)
+	{
+		CPVT_RESET_FLAGS(cpvt, CALL_FLAG_NEED_HANGUP);
+		PVT_STAT(pvt, calls_duration[cpvt->dir]) += duration;
+		change_channel_state(cpvt, CALL_STATE_RELEASED, cc_cause);
+		manager_event_cend(PVT_ID(pvt), call_index, duration, end_status, cc_cause);
+	}
+	else
+	{
+//		ast_log (LOG_ERROR, "[%s] CEND event for unknown call idx '%d'\n", PVT_ID(pvt), call_index);
+	}
+
+	return 0;
+        }
+
+
+        if (sscanf (str, "^DSCI:%d,%*d,2,%d,%*s", &call_index, &call_type) != 2)
+	{
+
+		ast_debug (1, "[%s] Irrelevant DSCI URC '%s'\n", PVT_ID(pvt), str);
+		return 0;
+	}
+
+	struct cpvt * cpvt = pvt->last_dialed_cpvt;
 	pvt->last_dialed_cpvt = NULL;
 	if(!cpvt)
 	{
 		ast_log (LOG_ERROR, "[%s] ^ORIG '%s' for unknown ATD\n", PVT_ID(pvt), str);
+
 		return 0;
 	}
 
 
-	/*
-	 * parse ORIG info in the following format:
-	 * ^ORIG:<call_index>,<call_type>
-	 */
-
-	if (sscanf (str, "^ORIG:%d,%d", &call_index, &call_type) != 2)
-	{
-		ast_log (LOG_ERROR, "[%s] Error parsing ORIG event '%s'\n", PVT_ID(pvt), str);
-		return -1;
-	}
+	
 
 	ast_debug (1, "[%s] ORIG Received call_index: %d call_type %d\n", PVT_ID(pvt), call_index, call_type);
 
@@ -683,6 +748,7 @@ static int at_response_orig (struct pvt* pvt, const char* str)
 static int at_response_conf (struct pvt* pvt, const char* str)
 {
 	int call_index;
+        int call_type;
 	struct cpvt * cpvt;
 
 	/*
@@ -690,10 +756,10 @@ static int at_response_conf (struct pvt* pvt, const char* str)
 	 * ^CONF: <call_index>
 	 */
 
-	if (sscanf (str, "^CONF:%d", &call_index) != 1)
+	if (sscanf (str, "^DSCI:%d,%*d,7,%d,%*s", &call_index, &call_type) != 2)
 	{
 		ast_log (LOG_ERROR, "[%s] Error parsing CONF event '%s'\n", PVT_ID(pvt), str);
-		return -1;
+		return 0;
 	}
 
 	ast_debug (1, "[%s] CONF Received call_index %d\n", PVT_ID(pvt), call_index);
@@ -706,8 +772,8 @@ static int at_response_conf (struct pvt* pvt, const char* str)
 
 	return 0;
 }
-#endif /* 0 */
 
+#endif /* 0 */
 
 /*!
  * \brief Handle ^CEND response
@@ -757,6 +823,7 @@ static int at_response_cend (struct pvt * pvt, const char* str)
 	return 0;
 }
 
+
 /*!
  * \brief Handle +CSCA response
  * \param pvt -- pvt structure
@@ -793,21 +860,22 @@ static int at_response_conn (struct pvt* pvt, const char* str)
 	int call_type;
 	struct cpvt * cpvt;
 
-	pvt->ring = 0;
-	pvt->dialing = 0;
-	pvt->cwaiting = 0;
-
 	request_clcc(pvt);
 
 	/*
 	 * parse CONN info in the following format:
 	 * ^CONN:<call_index>,<call_type>
 	 */
-	if (sscanf (str, "^CONN:%d,%d", &call_index, &call_type) != 2)
+	if (sscanf (str, "^DSCI:%d,%*d,3,%d,%*s", &call_index, &call_type) != 2)
 	{
 		ast_log (LOG_ERROR, "[%s] Error parsing CONN event '%s'\n", PVT_ID(pvt), str);
-		return -1;
+		return 0;
 	}
+
+	pvt->ring = 0;
+	pvt->dialing = 0;
+	pvt->cwaiting = 0;
+
 
 	ast_debug (1, "[%s] CONN Received call_index %d call_type %d\n", PVT_ID(pvt), call_index, call_type);
 
@@ -1661,7 +1729,7 @@ static int at_response_creg (struct pvt* pvt, char* str, size_t len)
 	}
 	else
 	{
-		pvt->gsm_registered = 0;
+		pvt->gsm_registered = 1;
 		manager_event_device_status(PVT_ID(pvt), "Unregister");
 	}
 

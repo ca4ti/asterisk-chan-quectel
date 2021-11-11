@@ -33,7 +33,7 @@ static const char cmd_at[] 	 = "AT\r";
 static const char cmd_chld1x[]   = "AT+CHLD=1%d\r";
 static const char cmd_chld2[]    = "AT+CHLD=2\r";
 static const char cmd_clcc[]     = "AT+CLCC\r";
-static const char cmd_ddsetex2[] = "AT+QPCMV=1,0\r";
+static const char cmd_ddsetex2[] = "AT\r";
 
 /*!
  * \brief Format and fill generic command
@@ -110,7 +110,7 @@ static int __attribute__ ((format(printf, 4, 5))) at_enqueue_generic(struct cpvt
  */
 EXPORT_DEF int at_enqueue_initialization(struct cpvt *cpvt, at_cmd_t from_command)
 {
-	static const char cmd2[] = "ATZ\r";
+	static const char cmd2[] = "AT^DSCI=1\r";
 	static const char cmd3[] = "ATE0\r";
 
 	static const char cmd5[] = "AT+CGMI\r";
@@ -523,7 +523,7 @@ EXPORT_DEF int at_enqueue_dial(struct cpvt *cpvt, const char *number, int clir)
 		cmdsno++;
 	}
 
-	err = at_fill_generic_cmd(&cmds[cmdsno], "ATD%s;\r", number);
+	err = at_fill_generic_cmd(&cmds[cmdsno], "at+qpcmv=0;+qpcmv=1,0;d%s;\r", number);
 	if(err)
 	{
 		ast_free(tmp);
@@ -538,8 +538,8 @@ EXPORT_DEF int at_enqueue_dial(struct cpvt *cpvt, const char *number, int clir)
 	ATQ_CMD_INIT_ST(cmds[cmdsno], CMD_AT_CLCC, cmd_clcc);
 	cmdsno++;
 
-	ATQ_CMD_INIT_ST(cmds[cmdsno], CMD_AT_DDSETEX, cmd_ddsetex2);
-	cmdsno++;
+/*	ATQ_CMD_INIT_ST(cmds[cmdsno], CMD_AT_DDSETEX, cmd_ddsetex2);
+	cmdsno++; */
 
 
 	if (at_queue_insert(cpvt, cmds, cmdsno, 1) != 0) {
@@ -560,7 +560,7 @@ EXPORT_DEF int at_enqueue_answer(struct cpvt *cpvt)
 {
 	at_queue_cmd_t cmds[] = {
 		ATQ_CMD_DECLARE_DYN(CMD_AT_A),
-		ATQ_CMD_DECLARE_ST(CMD_AT_DDSETEX, cmd_ddsetex2),
+//		ATQ_CMD_DECLARE_ST(CMD_AT_DDSETEX, cmd_ddsetex2),
 		};\
 	int count = ITEMS_OF(cmds);
 	const char * cmd1;
@@ -568,7 +568,7 @@ EXPORT_DEF int at_enqueue_answer(struct cpvt *cpvt)
 	if(cpvt->state == CALL_STATE_INCOMING)
 	{
 /* FIXME: channel number? */
-		cmd1 = "ATA\r";
+		cmd1 = "at+qpcmv=0;+qpcmv=1,0;a\r";
 	}
 	else if(cpvt->state == CALL_STATE_WAITING)
 	{

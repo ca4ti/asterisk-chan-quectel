@@ -19,7 +19,7 @@ struct iovec;
 \
 	_( BOOT,        "^BOOT",        "^BOOT:") \
 	_( BUSY,        "BUSY",         "BUSY\r") \
-	_( CEND,        "^CEND",        "^CEND:") \
+	_( COPS,        "+COPS",        "+COPS:") \
 \
 	_( CMGR,        "+CMGR",        "+CMGR:") \
 	_( CMS_ERROR,   "+CMS ERROR",   "+CMS ERROR:") \
@@ -29,9 +29,9 @@ struct iovec;
 	_( CNUM,        "+CNUM",        "+CNUM:") \
 		/* and "ERROR+CNUM:", hacked later on */ \
 \
-	_( CONF,        "^CONF",        "^CONF:") \
+	_( ORIG,        "^ORIG",        "^DSCI:") \
+	_( CEND,        "^CEND",        "^CEND:") \
 	_( CONN,        "^CONN",        "^CONN:") \
-	_( COPS,        "+COPS",        "+COPS:") \
 	_( CPIN,        "+CPIN",        "+CPIN:") \
 \
 	_( CREG,        "+CREG",        "+CREG:") \
@@ -44,11 +44,11 @@ struct iovec;
 		/* and "COMMAND NOT SUPPORT\r", hacked later on */ \
 \
 	_( MODE,        "^MODE",        "^MODE:") \
-	_( NO_CARRIER,  "NO CARRIER",   "NO CARRIER\r") \
+	_( NO_CARRIER,  "NO CARRIER",   "IGNORE\r") \
 \
 	_( NO_DIALTONE, "NO DIALTONE",  "NO DIALTONE\r") \
 	_( OK,          "OK",           "OK\r") \
-	_( ORIG,        "^ORIG",        "^ORIG:") \
+	_( CONF,        "^CONF",        "^CONF:") \
 	_( RING,        "RING",         "RING\r") \
 \
 	_( RSSI,        "^RSSI",        "^RSSI:") \
