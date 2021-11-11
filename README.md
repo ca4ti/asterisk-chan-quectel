@@ -1,5 +1,6 @@
 Channel driver for Quectel and Simcom modules 
 =================================================
+This should work with Quectel modules such as EC20, EC21, EC25, EG9x and others with voice over USB capability.
 
 I'm not a C programmer at all and this write-up may help those interested in improving this driver and also for supporting other modules such as those from Telit, U-blox, Sierra Wireless etc. 
 
@@ -9,7 +10,17 @@ In many modules, when AT^DSCI=1 is set, URC for call status indication is genera
 
 Armed with this knowledge and using AT^DSCI=1 as an intialization command, we can now set up the Huawei ^ORIG URC <a href="https://github.com/IchthysMaranatha/asterisk-chan-quectel/blob/b6f6a389f2d8cc0b1ba183f6ebe7f140e03730af/at_response.h#L32">here</a> to handle entire call management (initiatiing, connecting in or out, terminating) through code block <a href="https://github.com/IchthysMaranatha/asterisk-chan-quectel/blob/b6f6a389f2d8cc0b1ba183f6ebe7f140e03730af/at_response.c#L612-L737">here</a> with necessary changes.
 
-Once this is correctly done, we need to make sure that USB voice is properly activated for the call. For the Quectel module AT+QPCMV=1,0 enables voice over the USB emulated serial port. Unlike Huawei, this needs to be done before dialling out or receivng the call. We can also set it up as an initialisation command, but problem with this is that after a few calls voice may stop working and again a reset with AT+QPCMV=0 followed by AT+QPCMV=1,0 is needed. So I've appended AT+QPCMV=0 and AT+QPCMV=1,0 with every ATD and ATA command as done <a href="https://github.com/IchthysMaranatha/asterisk-chan-quectel/blob/b6f6a389f2d8cc0b1ba183f6ebe7f140e03730af/at_command.c#L526">here</a> and <a href="https://github.com/IchthysMaranatha/asterisk-chan-quectel/blob/b6f6a389f2d8cc0b1ba183f6ebe7f140e03730af/at_command.c#L571">here</a>    
+Once this is correctly done, we need to make sure that USB voice is properly activated for the call. For the Quectel module AT+QPCMV=1,0 enables voice over the USB emulated serial port. Unlike Huawei, this needs to be done before dialling out or receivng the call. We can also set it up as an initialisation command, but problem with this is that after a few calls voice may stop working and again a reset with AT+QPCMV=0 followed by AT+QPCMV=1,0 is needed. So I've appended AT+QPCMV=0 and AT+QPCMV=1,0 with every ATD and ATA command as done <a href="https://github.com/IchthysMaranatha/asterisk-chan-quectel/blob/b6f6a389f2d8cc0b1ba183f6ebe7f140e03730af/at_command.c#L526">here</a> and <a href="https://github.com/IchthysMaranatha/asterisk-chan-quectel/blob/b6f6a389f2d8cc0b1ba183f6ebe7f140e03730af/at_command.c#L571">here</a> Voice can also be set up over virtual USB sound card with AT+QPCMV=2,1 but I'll touch upon that later.
+
+For Simcom voice activation over USB with AT+CPCMREG=1 can be done only after a call is connected. It will persist even after a call but with the same issue that after a few calls it will need a reset with AT+CPCMREG=0. So one can use CPCMREG=0 before every DIAL or ANSWER and CPCMREG=1 after call connection. The CPCMREG=1 cannot imeediately follow ATD OR ATA as it throw an error or freeze up (I do not know if this is a problem with just my module). Still working out the kinks with Sim7600 and will upload code in a few days.
+
+Way forward: This <a href="http://laforge.gnumonks.org/blog/20170902-cellular_modems-voice/">justified rant</a> by a professional in the industry correctly indicates that the virtual sound card solution is way voice should be provided. We can already see that in few modules from Quectel, Telit, u-blox, Sierra Wireless etc. In such a scenario, development needs to be done for an integrated alsa voice channel for this driver. One can also use this driver as a control channel and chan_console or chan_alsa as the voice channel. So for EC25, one could set up AT+QPCMV=1,2 and then use bridged alsa channel which points to the modem sound card for every call. For EC25, one time USB configuration enabling UAC also needs to done as per doc <a href="https://forums.quectel.com/uploads/short-url/xnztA07u1c4hilREu66LYIY6NGR.pdf">here</a>
+
+Those with problems with chan_mobile with certain controllers such as the in built Raspberry Pi one may find a solution <a href="https://blog.maplein.com/2021/09/fix-for-audio-issues-with-asterisk-and.html">here</a>
+
+I won't accept donations, but if you wish you could donate to the person I've forked this from. Or if so inclined, you could donate here https://bethmyriam.org/ 
+
+Thanks be to the Father of Lights from Whom are all good things.
 
 Building:
 ----------
