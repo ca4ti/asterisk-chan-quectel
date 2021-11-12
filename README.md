@@ -1,6 +1,6 @@
 Channel driver for Quectel and Simcom modules 
 =================================================
-This should work with Quectel modules such as EC20, EC21, EC25, EG9x and others with voice over USB capability.
+This should work with Quectel modules such as EC20, EC21, EC25, EG9x and others with voice over USB capability. Tested with the EC25-E mini-pcie module.
 
 I'm not a C programmer at all and this write-up may help those interested in improving this driver and also for supporting other modules such as those from Telit, U-blox, Sierra Wireless etc. 
 
