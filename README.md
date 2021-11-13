@@ -29,7 +29,7 @@ Building:
     $ ./configure --with-astversion=16.20
     $ make
     $ make install
-    copy quectel.conf to /etc/asterisk
+    copy quectel.conf to /etc/asterisk Change context as required
 
 If you run a different version of Asterisk, you'll need to update the
 `16.20` as appropriate, obviously.
