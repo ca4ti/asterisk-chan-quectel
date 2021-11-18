@@ -183,6 +183,7 @@ typedef struct pvt
 
 	unsigned int		has_sms:1;			/*!< device has SMS support */
 	unsigned int		has_voice:1;			/*!< device has voice call support */
+	unsigned int		is_simcom:1;			/*!< device is a simcom module */
 	unsigned int		has_call_waiting:1;		/*!< call waiting enabled on device */
 
 	unsigned int		group_last_used:1;		/*!< mark the last used device */

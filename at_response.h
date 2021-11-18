@@ -30,7 +30,7 @@ struct iovec;
 		/* and "ERROR+CNUM:", hacked later on */ \
 \
 	_( ORIG,        "^ORIG",        "^DSCI:") \
-	_( CEND,        "^CEND",        "^CEND:") \
+	_( CEND,        "^CEND",        "VOICE CALL:") \
 	_( CONN,        "^CONN",        "^CONN:") \
 	_( CPIN,        "+CPIN",        "+CPIN:") \
 \
@@ -44,11 +44,11 @@ struct iovec;
 		/* and "COMMAND NOT SUPPORT\r", hacked later on */ \
 \
 	_( MODE,        "^MODE",        "^MODE:") \
-	_( NO_CARRIER,  "NO CARRIER",   "IGNORE\r") \
+	_( NO_CARRIER,  "NO CARRIER",   "NO CARRIER\r") \
 \
 	_( NO_DIALTONE, "NO DIALTONE",  "NO DIALTONE\r") \
 	_( OK,          "OK",           "OK\r") \
-	_( CONF,        "^CONF",        "^CONF:") \
+	_( CONF,        "^CONF",        "MISSED_CALL:") \
 	_( RING,        "RING",         "RING\r") \
 \
 	_( RSSI,        "^RSSI",        "^RSSI:") \

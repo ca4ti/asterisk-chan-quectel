@@ -495,6 +495,12 @@ static void* do_monitor_phone (void* data)
 
 		handle_expired_reports(pvt);
 
+		if (port_status (pvt->audio_fd))
+		{
+                       pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock); 
+		}
+
+
 		if (port_status (pvt->data_fd) || port_status (pvt->audio_fd))
 		{
 			ast_log (LOG_ERROR, "[%s] Lost connection to Quectel\n", dev);

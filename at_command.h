@@ -32,7 +32,7 @@
 \
 	_( AT_CHUP,         "AT+CHUP") \
 	_( AT_CIMI,         "AT+CIMI") \
-/*	_( AT_CLIP,         "AT+CLIP") */ \
+	_( AT_CVOICE2,      "AT+CPCMREG?") \
 	_( AT_CLIR,         "AT+CLIR") \
 \
 	_( AT_CLVL,         "AT+CLVL") \
@@ -57,10 +57,10 @@
 \
 	_( AT_CSSN,         "AT+CSSN") \
 	_( AT_CUSD,         "AT+CUSD") \
-	_( AT_CVOICE,       "AT") \
-	_( AT_D,            "at+qpcmv=0;+qpcmv=1,0;d") \
+	_( AT_CVOICE,       "AT+QPCMV?") \
+	_( AT_D,            "AT+CPCMREG=0;D") \
 \
-	_( AT_DDSETEX,      "AT") \
+	_( AT_DDSETEX,      "AT+CPCMREG=1") \
 	_( AT_DTMF,         "AT^DTMF") \
 	_( AT_E,            "ATE") \
 \
