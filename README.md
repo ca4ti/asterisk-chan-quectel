@@ -1,6 +1,6 @@
 Channel driver for Quectel and Simcom modules 
 =================================================
-This should work with Quectel modules such as EC20, EC21, EC25, EG9x and Simcom sim7600 and possibly other models with voice over USB capability. Tested with the EC25-E mini-pcie module and Waveshare sim7600 g-h dongle.
+This should work with Quectel modules such as EC20, EC21, EC25, EG9x and Simcom sim7600 and possibly other models with voice over USB capability. Tested with the EC25-E mini-pcie module and Waveshare sim7600 g-h dongle. If the product page of your Quectel module contains the application note Voice over USB and UAC, you should be good to go. If it only has the note Voice over UAC, you can still use this driver but you will need to use an additional Asterisk alsa channel with it and bridge that with every call.
 
 I'm not a C programmer at all and this write-up may help those interested in improving this driver and also for supporting other modules such as those from Telit, U-blox, Sierra Wireless etc. 
 
