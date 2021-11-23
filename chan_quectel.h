@@ -57,6 +57,7 @@ typedef struct pvt_state
 {
 	char			audio_tty[DEVPATHLEN];		/*!< tty for audio connection */
 	char			data_tty[DEVPATHLEN];		/*!< tty for AT commands */
+	char			quec_uac[1];
 	uint32_t		at_tasks;			/*!< number of active tasks in at_queue */
 	uint32_t		at_cmds;			/*!< number of active commands in at_queue */
 	uint32_t		chansno;			/*!< number of channels in channels list */
