@@ -1859,7 +1859,7 @@ static int at_response_creg (struct pvt* pvt, char* str, size_t len)
 	}
 	else
 	{
-		pvt->gsm_registered = 1;
+		pvt->gsm_registered = 0;
 		manager_event_device_status(PVT_ID(pvt), "Unregister");
 	}
 
