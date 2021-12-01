@@ -231,7 +231,9 @@ EXPORT_DEF int at_parse_creg (char* str, unsigned len, int* gsm_reg, int* gsm_re
 
 	if ((p2 && !p3 && !p4) || (p2 && p3 && p4))
 	{
+           if ((int) strtol (p2, (char**) NULL, 10) == 1 || (int) strtol (p2, (char**) NULL, 10) == 5) {
 		p1 = p2;
+                                                           }
 	}
 
 	if (p1)
