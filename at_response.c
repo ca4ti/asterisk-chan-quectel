@@ -142,6 +142,42 @@ static int at_response_cend (struct pvt * pvt, const char* str)
 		manager_event_cend(PVT_ID(pvt), 3, duration, end_status, cc_cause);
 	}
 
+	cpvt = pvt_find_cpvt(pvt, 2);
+	if (cpvt)
+	{
+                static const char cmd_atve[] = "AT+CPCMREG=0\r";
+                static const at_queue_cmd_t cmds1[] = {
+		ATQ_CMD_DECLARE_STIT(CMD_AT_DDSETEX, cmd_atve, ATQ_CMD_TIMEOUT_MEDIUM, 0),
+		};
+
+	        if (at_queue_insert_const(cpvt, cmds1, ITEMS_OF(cmds1), 1) != 0) {
+		chan_quectel_err = E_QUEUE;
+		return -1;
+	        }
+
+		CPVT_RESET_FLAGS(cpvt, CALL_FLAG_NEED_HANGUP);
+		PVT_STAT(pvt, calls_duration[cpvt->dir]) += duration;
+		change_channel_state(cpvt, CALL_STATE_RELEASED, cc_cause);
+		manager_event_cend(PVT_ID(pvt), 2, duration, end_status, cc_cause);
+	}
+	cpvt = pvt_find_cpvt(pvt, 1);
+	if (cpvt)
+	{
+                static const char cmd_atve[] = "AT+CPCMREG=0\r";
+                static const at_queue_cmd_t cmds1[] = {
+		ATQ_CMD_DECLARE_STIT(CMD_AT_DDSETEX, cmd_atve, ATQ_CMD_TIMEOUT_MEDIUM, 0),
+		};
+
+	        if (at_queue_insert_const(cpvt, cmds1, ITEMS_OF(cmds1), 1) != 0) {
+		chan_quectel_err = E_QUEUE;
+		return -1;
+	        }
+
+		CPVT_RESET_FLAGS(cpvt, CALL_FLAG_NEED_HANGUP);
+		PVT_STAT(pvt, calls_duration[cpvt->dir]) += duration;
+		change_channel_state(cpvt, CALL_STATE_RELEASED, cc_cause);
+		manager_event_cend(PVT_ID(pvt), 1, duration, end_status, cc_cause);
+	}
 	else
 	{
 //		ast_log (LOG_ERROR, "[%s] CEND event for unknown call idx '%d'\n", PVT_ID(pvt), call_index);
