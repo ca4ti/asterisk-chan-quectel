@@ -6,3 +6,8 @@ http://www.makhutov.org
 Dmitry Vagin <dmitry2004@yandex.ru>
 
 bg <bg_one@mail.ru>
+
+ALSA component code copied from chan_alsa.c
+* Copyright (C) Digium, Inc.
+*
+* By Matthew Fredrickson <creslin@digium.com>
