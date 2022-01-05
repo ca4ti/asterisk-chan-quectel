@@ -129,7 +129,8 @@ static char* cli_show_device_settings (struct ast_cli_entry* e, int cmd, struct 
 	{
 		ast_cli (a->fd, "------------- Settings ------------\n");
 		ast_cli (a->fd, "  Device                  : %s\n", PVT_ID(pvt));
-		ast_cli (a->fd, "  Audio                   : %s\n", CONF_UNIQ(pvt, audio_tty));
+                if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") == 0) ast_cli (a->fd, "  Audio UAC               : %s\n", CONF_UNIQ(pvt, alsadev));
+		else ast_cli (a->fd, "  Audio                   : %s\n", CONF_UNIQ(pvt, audio_tty));
 		ast_cli (a->fd, "  Data                    : %s\n", CONF_UNIQ(pvt, data_tty));
 		ast_cli (a->fd, "  IMEI                    : %s\n", CONF_UNIQ(pvt, imei));
 		ast_cli (a->fd, "  IMSI                    : %s\n", CONF_UNIQ(pvt, imsi));
@@ -197,7 +198,8 @@ static char* cli_show_device_state (struct ast_cli_entry* e, int cmd, struct ast
 		ast_cli (a->fd, "-------------- Status -------------\n");
 		ast_cli (a->fd, "  Device                  : %s\n", PVT_ID(pvt));
 		ast_cli (a->fd, "  State                   : %s\n", ast_str_buffer(statebuf));
-		ast_cli (a->fd, "  Audio                   : %s\n", PVT_STATE(pvt, audio_tty));
+                if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") == 0) ast_cli (a->fd, "  Audio UAC               : %s\n", CONF_UNIQ(pvt, alsadev));
+		else ast_cli (a->fd, "  Audio                   : %s\n", PVT_STATE(pvt, audio_tty));
 		ast_cli (a->fd, "  Data                    : %s\n", PVT_STATE(pvt, data_tty));
 		ast_cli (a->fd, "  Voice                   : %s\n", (pvt->has_voice) ? "Yes" : "No");
 		ast_cli (a->fd, "  SMS                     : %s\n", (pvt->has_sms) ? "Yes" : "No");

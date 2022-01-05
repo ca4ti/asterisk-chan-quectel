@@ -12,8 +12,8 @@
 #include "export.h"				/* EXPORT_DECL EXPORT_DEF */
 #include "mixbuffer.h"				/* struct mixstream */
 #include "mutils.h"				/* enum2str() ITEMS_OF() */
-
 #define FRAME_SIZE		320
+#define FRAME_SIZE2		160
 
 typedef enum {
 	CALL_STATE_MIN		= 0,

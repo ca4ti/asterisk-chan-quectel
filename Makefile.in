@@ -44,7 +44,7 @@ CFLAGS  = @CFLAGS@ -I$(srcdir) -std=gnu99 -DAST_MODULE_SELF_SYM=__internal_chan_
 	@CPPFLAGS@ @DEFS@ @AC_CFLAGS@
 LDFLAGS = @LDFLAGS@ 
 SOLINK  = @SOLINK@
-LIBS    = @LIBS@
+LIBS    = @LIBS@ -lasound
 DISTNAME= @PACKAGE_TARNAME@-@PACKAGE_VERSION@.r@PACKAGE_REVISION@
 
 srcdir = @srcdir@

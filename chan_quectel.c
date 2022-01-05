@@ -72,6 +72,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Rev: " PACKAGE_REVISION " $")
 #include "pdiscovery.h"			/* pdiscovery_lookup() pdiscovery_init() pdiscovery_fini() */
 #include "smsdb.h"
 #include "error.h"
+#include "errno.h"
+
+
+
 
 EXPORT_DEF const char * const dev_state_strs[4] = { "stop", "restart", "remove", "start" };
 EXPORT_DEF public_state_t * gpublic;
@@ -79,6 +83,135 @@ EXPORT_DEF public_state_t * gpublic;
 EXPORT_DEF struct ast_format chan_quectel_format;
 EXPORT_DEF struct ast_format_cap * chan_quectel_format_cap;
 #endif /* ^10-13 */
+
+static snd_pcm_t *alsa_card_init(char *dev, snd_pcm_stream_t stream,struct pvt * pvt)
+{
+	int err;
+	int direction;
+	snd_pcm_t *handle = NULL;
+	snd_pcm_hw_params_t *hwparams = NULL;
+	snd_pcm_sw_params_t *swparams = NULL;
+	struct pollfd pfd;
+	snd_pcm_uframes_t period_size = PERIOD_FRAMES * 4;
+	snd_pcm_uframes_t buffer_size = 0;
+	unsigned int rate = DESIRED_RATE;
+	snd_pcm_uframes_t start_threshold, stop_threshold;
+
+
+	err = snd_pcm_open(&handle, dev, stream, SND_PCM_NONBLOCK);
+	if (err < 0) {
+		ast_log(LOG_ERROR, "snd_pcm_open failed: %s\n", snd_strerror(err));
+		return NULL;
+	} else {
+		ast_debug(1, "Opening device %s in %s mode\n", dev, (stream == SND_PCM_STREAM_CAPTURE) ? "read" : "write");
+	}
+
+	hwparams = ast_alloca(snd_pcm_hw_params_sizeof());
+	memset(hwparams, 0, snd_pcm_hw_params_sizeof());
+	snd_pcm_hw_params_any(handle, hwparams);
+
+	err = snd_pcm_hw_params_set_access(handle, hwparams, SND_PCM_ACCESS_RW_INTERLEAVED);
+	if (err < 0)
+		ast_log(LOG_ERROR, "set_access failed: %s\n", snd_strerror(err));
+
+	err = snd_pcm_hw_params_set_format(handle, hwparams, format);
+	if (err < 0)
+		ast_log(LOG_ERROR, "set_format failed: %s\n", snd_strerror(err));
+
+	err = snd_pcm_hw_params_set_channels(handle, hwparams, 1);
+	if (err < 0)
+		ast_log(LOG_ERROR, "set_channels failed: %s\n", snd_strerror(err));
+
+	direction = 0;
+	err = snd_pcm_hw_params_set_rate_near(handle, hwparams, &rate, &direction);
+	if (rate != DESIRED_RATE)
+		ast_log(LOG_WARNING, "Rate not correct, requested %d, got %u\n", DESIRED_RATE, rate);
+
+	direction = 0;
+	err = snd_pcm_hw_params_set_period_size_near(handle, hwparams, &period_size, &direction);
+	if (err < 0)
+		ast_log(LOG_ERROR, "period_size(%lu frames) is bad: %s\n", period_size, snd_strerror(err));
+	else {
+		ast_debug(1, "Period size is %d\n", err);
+	}
+
+	buffer_size = 4096 * 2;		/* period_size * 16; */
+	err = snd_pcm_hw_params_set_buffer_size_near(handle, hwparams, &buffer_size);
+	if (err < 0)
+		ast_log(LOG_WARNING, "Problem setting buffer size of %lu: %s\n", buffer_size, snd_strerror(err));
+	else {
+		ast_debug(1, "Buffer size is set to %d frames\n", err);
+	}
+
+	err = snd_pcm_hw_params(handle, hwparams);
+	if (err < 0)
+		ast_log(LOG_ERROR, "Couldn't set the new hw params: %s\n", snd_strerror(err));
+
+	swparams = ast_alloca(snd_pcm_sw_params_sizeof());
+	memset(swparams, 0, snd_pcm_sw_params_sizeof());
+	snd_pcm_sw_params_current(handle, swparams);
+
+	if (stream == SND_PCM_STREAM_PLAYBACK)
+		start_threshold = period_size;
+	else
+		start_threshold = 1;
+
+	err = snd_pcm_sw_params_set_start_threshold(handle, swparams, start_threshold);
+	if (err < 0)
+		ast_log(LOG_ERROR, "start threshold: %s\n", snd_strerror(err));
+
+	if (stream == SND_PCM_STREAM_PLAYBACK)
+		stop_threshold = buffer_size;
+	else
+		stop_threshold = buffer_size;
+
+	err = snd_pcm_sw_params_set_stop_threshold(handle, swparams, stop_threshold);
+	if (err < 0)
+		ast_log(LOG_ERROR, "stop threshold: %s\n", snd_strerror(err));
+
+	err = snd_pcm_sw_params(handle, swparams);
+	if (err < 0)
+		ast_log(LOG_ERROR, "sw_params: %s\n", snd_strerror(err));
+
+	err = snd_pcm_poll_descriptors_count(handle);
+	if (err <= 0)
+		ast_log(LOG_ERROR, "Unable to get a poll descriptors count, error is %s\n", snd_strerror(err));
+	if (err != 1) {
+		ast_debug(1, "Can't handle more than one device\n");
+	}
+
+	snd_pcm_poll_descriptors(handle, &pfd, err);
+	ast_debug(1, "Acquired fd %d from the poll descriptor\n", pfd.fd);
+
+	if (stream == SND_PCM_STREAM_CAPTURE)
+		pvt->audio_fd = pfd.fd;
+	else
+		writedev = pfd.fd;
+
+
+	return handle;
+}
+
+static int soundcard_init(struct pvt * pvt)
+{
+
+       pvt->icard = alsa_card_init(CONF_UNIQ(pvt, alsadev), SND_PCM_STREAM_CAPTURE,pvt);
+	if (!pvt->icard) {
+			ast_log(LOG_ERROR, "Problem opening ALSA capture device %s \n",CONF_UNIQ(pvt, alsadev));
+			return -1;
+        }
+	pvt->ocard = alsa_card_init(CONF_UNIQ(pvt, alsadev), SND_PCM_STREAM_PLAYBACK,pvt);
+
+	if (!pvt->ocard) {
+		ast_log(LOG_ERROR, "Problem opening ALSA playback device %s \n",CONF_UNIQ(pvt, alsadev));
+		return -1;
+	}
+	ast_verb (2, "Sound Card %s Initialized\n", CONF_UNIQ(pvt, alsadev));
+        snd_pcm_prepare(pvt->icard);
+        snd_pcm_drop(pvt->icard);
+
+	return writedev;}
+
 
 static int public_state_init(struct public_state * state);
 
@@ -286,8 +419,12 @@ static void disconnect_quectel (struct pvt* pvt)
 	}
 	at_queue_flush(pvt);
 	pvt->last_dialed_cpvt = NULL;
+        if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") == 0) {
+	if (pvt->icard) snd_pcm_close(pvt->icard);
+	if (pvt->ocard)	snd_pcm_close(pvt->ocard);
+                                                       }
+	else closetty (pvt->audio_fd, &pvt->alock);
 
-	closetty (pvt->audio_fd, &pvt->alock);
 	closetty (pvt->data_fd, &pvt->dlock);
 
 	pvt->data_fd = -1;
@@ -494,19 +631,26 @@ static void* do_monitor_phone (void* data)
 		ast_mutex_lock (&pvt->lock);
 
 		handle_expired_reports(pvt);
+		if (port_status (pvt->data_fd))
+		{
+			ast_log (LOG_ERROR, "[%s] Lost connection to Quectel\n", dev);
+			goto e_cleanup;
+		}
+
+               if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") != 0) {
 
 		if (port_status (pvt->audio_fd))
 		{
                        pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock); 
 		}
 
-
-		if (port_status (pvt->data_fd) || port_status (pvt->audio_fd))
+                                                              
+		if (port_status (pvt->audio_fd))
 		{
 			ast_log (LOG_ERROR, "[%s] Lost connection to Quectel\n", dev);
 			goto e_cleanup;
 		}
-
+                                                               }
 		if(pvt->terminate_monitor)
 		{
 			ast_log (LOG_NOTICE, "[%s] stopping by %s request\n", dev, dev_state2str(pvt->desired_state));
@@ -689,19 +833,25 @@ static void pvt_start(struct pvt * pvt)
 
 	ast_verb(3, "[%s] Trying to connect on %s...\n", PVT_ID(pvt), PVT_STATE(pvt, data_tty));
 
+
 	pvt->data_fd = opentty(PVT_STATE(pvt, data_tty), &pvt->dlock);
 	if (pvt->data_fd < 0) {
 		return;
 	}
-
+        if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") == 0) {
+             if (pvt->audio_fd < 0) if (soundcard_init(pvt) < 0) disconnect_quectel (pvt);
+                                                        }
+        else {
 	// TODO: delay until device activate voice call or at pvt_on_create_1st_channel()
 	pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock);
 	if (pvt->audio_fd < 0) {
 		goto cleanup_datafd;
-	}
+	                       }
+        }
 
 	if (!start_monitor(pvt)) {
-		goto cleanup_audiofd;
+              if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") == 0) goto cleanup_datafd;
+              else goto cleanup_audiofd;
 	}
 
 	/* Set data_fd and audio_fd to non-blocking. This appears to fix
@@ -711,8 +861,10 @@ static void pvt_start(struct pvt * pvt)
 	 * read(). */
 	flags = fcntl(pvt->data_fd, F_GETFL);
 	fcntl(pvt->data_fd, F_SETFL, flags | O_NONBLOCK);
+        if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") != 0) {
 	flags = fcntl(pvt->audio_fd, F_GETFL);
 	fcntl(pvt->audio_fd, F_SETFL, flags | O_NONBLOCK);
+                                                        }
 
 	pvt->connected = 1;
 	pvt->current_state = DEV_STATE_STARTED;
@@ -856,11 +1008,13 @@ static void discovery_stop(public_state_t * state)
 #/* */
 EXPORT_DEF void pvt_on_create_1st_channel(struct pvt* pvt)
 {
+        if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") != 0) {
 	mixb_init (&pvt->a_write_mixb, pvt->a_write_buf, sizeof (pvt->a_write_buf));
 //	rb_init (&pvt->a_write_rb, pvt->a_write_buf, sizeof (pvt->a_write_buf));
 
 	if(!pvt->a_timer)
 		pvt->a_timer = ast_timer_open ();
+                                                       }
 
 /* FIXME: do on each channel switch */
 	if(pvt->dsp)

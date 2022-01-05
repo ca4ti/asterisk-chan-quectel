@@ -116,6 +116,7 @@ typedef struct dc_uconfig
 	char			imei[IMEI_SIZE+1];		/*!< search device by imei */
 	char			imsi[IMSI_SIZE+1];		/*!< search device by imsi */
         char                    quec_uac[2];
+        char			alsadev[DEVNAMELEN];
 } dc_uconfig_t;
 
 /* all Config settings join in one place */

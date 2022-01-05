@@ -47,8 +47,8 @@ static int manager_show_devices (struct mansession* s, const struct message* m)
 			if(!ast_strlen_zero (id))
 				astman_append (s, "ActionID: %s\r\n", id);
 			astman_append (s, "Device: %s\r\n", PVT_ID(pvt));
-/* settings */
-			astman_append (s, "AudioSetting: %s\r\n", CONF_UNIQ(pvt, audio_tty));
+/* settings */          if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") == 0) astman_append (s, "AudioSetting: %s\r\n", CONF_UNIQ(pvt, alsadev));
+			else astman_append (s, "AudioSetting: %s\r\n", CONF_UNIQ(pvt, audio_tty));
 			astman_append (s, "DataSetting: %s\r\n", CONF_UNIQ(pvt, data_tty));
 			astman_append (s, "IMEISetting: %s\r\n", CONF_UNIQ(pvt, imei));
 			astman_append (s, "IMSISetting: %s\r\n", CONF_UNIQ(pvt, imsi));
@@ -71,7 +71,8 @@ static int manager_show_devices (struct mansession* s, const struct message* m)
 			astman_append (s, "MinimalDTMFInterval: %d\r\n", CONF_SHARED(pvt, mindtmfinterval));
 /* state */
 			astman_append (s, "State: %s\r\n", pvt_str_state(pvt));
-			astman_append (s, "AudioState: %s\r\n", PVT_STATE(pvt, audio_tty));
+                        if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") == 0) astman_append (s, "AudioState: %s\r\n", CONF_UNIQ(pvt, alsadev));
+			else astman_append (s, "AudioState: %s\r\n", PVT_STATE(pvt, audio_tty));
 			astman_append (s, "DataState: %s\r\n", PVT_STATE(pvt, data_tty));
 			astman_append (s, "Voice: %s\r\n", (pvt->has_voice) ? "Yes" : "No");
 			astman_append (s, "SMS: %s\r\n", (pvt->has_sms) ? "Yes" : "No");

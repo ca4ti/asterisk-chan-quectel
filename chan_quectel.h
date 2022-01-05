@@ -26,7 +26,26 @@
 #include "dc_config.h"				/* pvt_config_t */
 #include "at_command.h"
 
-#define MODULE_DESCRIPTION	"Channel Driver for 2G 3G 4g Modules"
+#include <alsa/asoundlib.h>
+#define PERIOD_FRAMES           80
+#define DESIRED_RATE 8000
+#define ALSA_PCM_NEW_HW_PARAMS_API
+#define ALSA_PCM_NEW_SW_PARAMS_API
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+static snd_pcm_format_t format = SND_PCM_FORMAT_S16_LE;
+#else
+static snd_pcm_format_t format = SND_PCM_FORMAT_S16_BE;
+#endif
+static int silencesuppression = 0;
+static int silencethreshold = 1000;
+#define MAX_BUFFER_SIZE 100
+
+static int writedev = -1;
+
+#define MODULE_DESCRIPTION	"Channel Driver for Mobile Telephony"
 #define MAXQUECTELDEVICES	128
 
 INLINE_DECL const char * dev_state2str(dev_state_t state)
@@ -57,7 +76,7 @@ typedef struct pvt_state
 {
 	char			audio_tty[DEVPATHLEN];		/*!< tty for audio connection */
 	char			data_tty[DEVPATHLEN];		/*!< tty for AT commands */
-	char			quec_uac[1];
+
 	uint32_t		at_tasks;			/*!< number of active tasks in at_queue */
 	uint32_t		at_cmds;			/*!< number of active commands in at_queue */
 	uint32_t		chansno;			/*!< number of channels in channels list */
@@ -121,6 +140,7 @@ typedef struct pvt
 
 	pthread_t		monitor_thread;			/*!< monitor (at commands reader) thread handle */
 
+        snd_pcm_t               *icard, *ocard;
 	int			audio_fd;			/*!< audio descriptor */
 	int			data_fd;			/*!< data descriptor */
 	char			* alock;			/*!< name of lockfile for audio */

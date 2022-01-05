@@ -7,6 +7,10 @@
    Dmitry Vagin <dmitry2004@yandex.ru>
 
    bg <bg_one@mail.ru>
+   Alsa component
+   Copyright (C) , Digium, Inc.
+ 
+   By Matthew Fredrickson <creslin@digium.com>
 */
 #include "ast_config.h"
 
@@ -30,6 +34,10 @@
 #include "helpers.h"				/* get_at_clir_value()  */
 #include "at_queue.h"				/* write_all() TODO: move out */
 #include "manager.h"				/* manager_event_call_state_change() */
+
+#ifndef ESTRPIPE
+#define ESTRPIPE EPIPE
+#endif
 
 
 static char silence_frame[FRAME_SIZE];
@@ -302,9 +310,13 @@ static int channel_call(struct ast_channel* channel, char* dest, attribute_unuse
 #/* ARCH: move to cpvt level */
 static void disactivate_call(struct cpvt* cpvt)
 {
+	struct pvt* pvt;
+	pvt = cpvt->pvt;
+
 	if(cpvt->channel && CPVT_TEST_FLAG(cpvt, CALL_FLAG_ACTIVATED))
 	{
-		mixb_detach(&cpvt->pvt->a_write_mixb, &cpvt->mixstream);
+                if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") == 0) snd_pcm_drop(pvt->icard);
+		else mixb_detach(&cpvt->pvt->a_write_mixb, &cpvt->mixstream);
 		ast_channel_set_fd (cpvt->channel, 1, -1);
 		ast_channel_set_fd (cpvt->channel, 0, -1);
 		CPVT_RESET_FLAGS(cpvt, CALL_FLAG_ACTIVATED | CALL_FLAG_MASTER);
@@ -338,7 +350,7 @@ static void activate_call(struct cpvt* cpvt)
 			if(cpvt2->channel)
 			{
 				ast_channel_set_fd (cpvt2->channel, 1, -1);
-				if(CPVT_TEST_FLAG(cpvt, CALL_FLAG_ACTIVATED))
+				if(CPVT_TEST_FLAG(cpvt, CALL_FLAG_ACTIVATED) && strcmp(CONF_UNIQ(pvt, quec_uac),"1") != 0)
 				{
 					ast_channel_set_fd (cpvt2->channel, 0, cpvt2->rd_pipe[PIPE_READ]);
 					ast_debug (6, "[%s] call idx %d still active fd %d\n", PVT_ID(pvt), cpvt2->call_idx, cpvt2->rd_pipe[PIPE_READ]);
@@ -351,7 +363,15 @@ static void activate_call(struct cpvt* cpvt)
 	if(!CPVT_TEST_FLAG(cpvt, CALL_FLAG_ACTIVATED))
 	{
 		// FIXME: reset possition?
-		mixb_attach(&pvt->a_write_mixb, &cpvt->mixstream);
+		if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") != 0) mixb_attach(&pvt->a_write_mixb, &cpvt->mixstream);
+                else {
+	        snd_pcm_state_t state;
+	        state = snd_pcm_state(pvt->icard);
+	        if ((state != SND_PCM_STATE_PREPARED) && (state != SND_PCM_STATE_RUNNING)) {
+                snd_pcm_prepare(pvt->icard);
+                snd_pcm_start(pvt->icard);
+                                                                                            }
+                      }                
 //		rb_init (&cpvt->a_write_rb, cpvt->a_write_buf, sizeof (cpvt->a_write_buf));
 //		cpvt->write = pvt->a_write_rb.write;
 //		cpvt->used = pvt->a_write_rb.used;
@@ -363,7 +383,7 @@ static void activate_call(struct cpvt* cpvt)
 		if(cpvt->channel)
 		{
 			ast_channel_set_fd (cpvt->channel, 0, pvt->audio_fd);
-			if (pvt->a_timer)
+			if (pvt->a_timer && strcmp(CONF_UNIQ(pvt, quec_uac),"1") != 0)
 			{
 				ast_channel_set_fd (cpvt->channel, 1, ast_timer_fd (pvt->a_timer));
 				ast_timer_set_rate (pvt->a_timer, 50);
@@ -676,6 +696,8 @@ static struct ast_frame* channel_read (struct ast_channel* channel)
 		goto e_return;
 	}
 
+        if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") != 0) {
+
 	if (pvt->a_timer && ast_channel_fdno(channel) == 1)
 	{
 		ast_timer_ack (pvt->a_timer, 1);
@@ -798,6 +820,82 @@ e_return:
 	ast_mutex_unlock (&pvt->lock);
 
 	return f;
+        }
+        else {
+	static struct ast_frame f;
+	static short __buf[FRAME_SIZE2 + AST_FRIENDLY_OFFSET / 2];
+	short *buf;
+	static int readpos = 0;
+	static int left = FRAME_SIZE2;
+	snd_pcm_state_t state;
+	int r = 0;
+
+	f.frametype = AST_FRAME_NULL;
+	f.subclass.integer = 0;
+	f.samples = 0;
+	f.datalen = 0;
+	f.data.ptr = NULL;
+	f.offset = 0;
+	f.src = AST_MODULE;
+	f.mallocd = 0;
+	f.delivery.tv_sec = 0;
+	f.delivery.tv_usec = 0;
+	state = snd_pcm_state(pvt->icard);
+	if ((state != SND_PCM_STATE_PREPARED) && (state != SND_PCM_STATE_RUNNING)) {
+		snd_pcm_prepare(pvt->icard);
+
+	}
+
+	buf = __buf + AST_FRIENDLY_OFFSET / 2;
+
+	r = snd_pcm_readi(pvt->icard, buf + readpos, left);
+	if (r == -EPIPE) {
+#if DEBUG
+		ast_log(LOG_ERROR, "XRUN read\n");
+#endif
+		snd_pcm_prepare(pvt->icard);
+	} else if (r == -ESTRPIPE) {
+		ast_log(LOG_ERROR, "-ESTRPIPE\n");
+		snd_pcm_prepare(pvt->icard);
+	} else if (r < 0) {
+		ast_log(LOG_ERROR, "Read error: %s\n", snd_strerror(r));
+	}
+
+	/* Return NULL frame on error */
+	if (r < 0) {
+		ast_mutex_unlock (&pvt->lock);
+		return &f;
+	}
+	readpos += r;
+	left -= r;
+
+	if (readpos >= FRAME_SIZE2) {
+		/* A real frame */
+		readpos = 0;
+		left = FRAME_SIZE2;
+#if 0
+                if (ast_channel_state(channel) != AST_STATE_UP){
+			/* Don't transmit unless it's up */
+			ast_mutex_unlock(&pvt->lock);
+			return &f;
+		}
+#endif
+		f.frametype = AST_FRAME_VOICE;
+		f.subclass.format = ast_format_slin;
+		f.samples = FRAME_SIZE2;
+		f.datalen = FRAME_SIZE2 * 2;
+		f.data.ptr = buf;
+		f.offset = AST_FRIENDLY_OFFSET;
+		f.src = AST_MODULE;
+		f.mallocd = 0;
+
+	}
+
+	ast_mutex_unlock (&pvt->lock);
+
+	return &f;
+        }
+
 }
 
 #/* */
@@ -805,9 +903,6 @@ static int channel_write (struct ast_channel* channel, struct ast_frame* f)
 {
 	struct cpvt* cpvt = ast_channel_tech_pvt(channel);
 	struct pvt* pvt;
-	size_t count;
-	int gains[2];
-
 #if ASTERISK_VERSION_NUM >= 130000 /* 13+ */
 	if (f->frametype != AST_FRAME_VOICE
 			|| ast_format_cmp(f->subclass.format, ast_format_slin) != AST_FORMAT_CMP_EQUAL)
@@ -837,6 +932,11 @@ static int channel_write (struct ast_channel* channel, struct ast_frame* f)
 	pvt = cpvt->pvt;
 
 	ast_debug (7, "[%s] write call idx %d state %d\n", PVT_ID(pvt), cpvt->call_idx, cpvt->state);
+
+        if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") != 0) {
+	size_t count;
+	int gains[2];
+
 
 	while (ast_mutex_trylock (&pvt->lock))
 	{
@@ -977,6 +1077,59 @@ e_return:
 	ast_mutex_unlock (&pvt->lock);
 
 	return 0;
+             }
+        else {
+	static char sizbuf[8000];
+	static int sizpos = 0;
+	int len = sizpos;
+	int res = 0;
+	/* size_t frames = 0; */
+	snd_pcm_state_t state;
+
+
+	while (ast_mutex_trylock (&pvt->lock))
+	{
+		CHANNEL_DEADLOCK_AVOIDANCE (channel);
+	}
+	if (f->datalen > sizeof(sizbuf) - sizpos) {
+		ast_log(LOG_WARNING, "Frame too large\n");
+		res = -1;
+	} else {
+		memcpy(sizbuf + sizpos, f->data.ptr, f->datalen);
+		len += f->datalen;
+		state = snd_pcm_state(pvt->ocard);
+		if (state == SND_PCM_STATE_XRUN)
+			snd_pcm_prepare(pvt->ocard);
+		while ((res = snd_pcm_writei(pvt->ocard, sizbuf, len / 2)) == -EAGAIN) {
+			usleep(1);
+		}
+		if (res == -EPIPE) {
+#if DEBUG
+			ast_debug(1, "XRUN write\n");
+#endif
+			snd_pcm_prepare(pvt->ocard);
+			while ((res = snd_pcm_writei(pvt->ocard, sizbuf, len / 2)) == -EAGAIN) {
+				usleep(1);
+			}
+			if (res != len / 2) {
+				ast_log(LOG_ERROR, "Write error: %s\n", snd_strerror(res));
+				res = -1;
+			} else if (res < 0) {
+				ast_log(LOG_ERROR, "Write error %s\n", snd_strerror(res));
+				res = -1;
+			}
+		} else {
+			if (res == -ESTRPIPE)
+				ast_log(LOG_ERROR, "You've got some big problems\n");
+			else if (res < 0)
+				ast_log(LOG_NOTICE, "Error %d on write\n", res);
+		}
+	}
+
+	ast_mutex_unlock (&pvt->lock);
+
+	return res >= 0 ? 0 : res;
+           }
 }
 #undef subclass_integer
 #undef subclass_codec
