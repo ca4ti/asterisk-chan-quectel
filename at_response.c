@@ -1357,7 +1357,7 @@ static int at_response_ring (struct pvt* pvt)
 		request_clcc(pvt);
 
 		/* We only want to syncronize volume on the first ring and if no channels yes */
-		if (pvt->volume_sync_step == VOLUME_SYNC_BEGIN && PVT_NO_CHANS(pvt))
+/*		if (pvt->volume_sync_step == VOLUME_SYNC_BEGIN && PVT_NO_CHANS(pvt))
 		{
 			if (at_enqueue_volsync(&pvt->sys_chan))
 			{
@@ -1366,6 +1366,7 @@ static int at_response_ring (struct pvt* pvt)
 			else
 				pvt->volume_sync_step++;
 		}
+*/
 	}
 
 	return 0;
