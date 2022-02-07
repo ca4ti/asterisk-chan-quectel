@@ -156,7 +156,7 @@ EXPORT_DEF int at_parse_creg (char* str, unsigned len, int* gsm_reg, int* gsm_re
 	 * +CREG: [<p1>,]<p2>[,<p3>,<p4>]
 	 */
 
-	for (i = 0, state = 0; i < len && state < 8; i++)
+	for (i = 0, state = 0; i < len && state < 9; i++)
 	{
 		switch (state)
 		{
@@ -191,6 +191,12 @@ EXPORT_DEF int at_parse_creg (char* str, unsigned len, int* gsm_reg, int* gsm_re
 				}
 				/* fall through */
 			case 4:
+				if (str[i] == '"')
+				{
+					str[i] = '\0';
+				        break;
+				}
+
 				if (str[i] == ',')
 				{
 					str[i] = '\0';
@@ -207,6 +213,12 @@ EXPORT_DEF int at_parse_creg (char* str, unsigned len, int* gsm_reg, int* gsm_re
 				/* fall through */
 
 			case 6:
+				if (str[i] == '"')
+				{
+					str[i] = '\0';
+				        break;
+				}
+
 				if (str[i] == ',')
 				{
 					str[i] = '\0';
@@ -218,6 +230,13 @@ EXPORT_DEF int at_parse_creg (char* str, unsigned len, int* gsm_reg, int* gsm_re
 				if (str[i] != ' ' && str[i] != '"')
 				{
 					p4 = &str[i];
+					state++;
+				}
+				break;
+			case 8:
+				if (str[i] == '"')
+				{
+					str[i] = '\0';
 					state++;
 				}
 				break;
