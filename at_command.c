@@ -418,7 +418,7 @@ EXPORT_DEF int at_enqueue_dtmf(struct cpvt *cpvt, char digit)
 
 		case '*':
 		case '#':
-			return at_enqueue_generic(cpvt, CMD_AT_DTMF, 1, "AT^DTMF=%d,%c\r", cpvt->call_idx, digit);
+			return at_enqueue_generic(cpvt, CMD_AT_DTMF, 1, "AT+VTS=%c\r", digit);
 	}
 	return -1;
 }
