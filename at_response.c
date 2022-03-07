@@ -2164,6 +2164,9 @@ int at_response (struct pvt* pvt, const struct iovec iov[2], int iovcnt, at_res_
 
 			case RES_BUSY:
 				ast_log (LOG_ERROR, "[%s] Receive BUSY\n", PVT_ID(pvt));
+				if (pvt->is_simcom) {
+				                return 0;
+				                    }
 				at_response_busy(pvt, AST_CONTROL_BUSY);
 				break;
 
