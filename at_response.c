@@ -182,7 +182,7 @@ static int at_response_cend (struct pvt * pvt, const char* str)
 	{
 //		ast_log (LOG_ERROR, "[%s] CEND event for unknown call idx '%d'\n", PVT_ID(pvt), call_index);
 	}
-        closetty (pvt->audio_fd, &pvt->alock);  
+//        closetty (pvt->audio_fd, &pvt->alock);  
 	return 0;
 }
 
