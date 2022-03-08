@@ -2165,10 +2165,17 @@ int at_response (struct pvt* pvt, const struct iovec iov[2], int iovcnt, at_res_
 			case RES_BUSY:
 				ast_log (LOG_ERROR, "[%s] Receive BUSY\n", PVT_ID(pvt));
 				if (pvt->is_simcom) {
-				                return 0;
-				                    }
-				at_response_busy(pvt, AST_CONTROL_BUSY);
-				break;
+					request_clcc(pvt);
+
+					if (pvt->dialing) {
+					
+						char str2[20]="VOICE CALL: END: 0";
+						at_response_cend (pvt, str2);
+						break;
+                                                           }
+                                                      }
+
+				return 0;
 
 			case RES_NO_DIALTONE:
 				ast_log (LOG_ERROR, "[%s] Receive NO DIALTONE\n", PVT_ID(pvt));
