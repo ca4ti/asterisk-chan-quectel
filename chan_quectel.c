@@ -641,6 +641,7 @@ static void* do_monitor_phone (void* data)
 
 		if (port_status (pvt->audio_fd))
 		{
+		       if (pvt->audio_fd) closetty(pvt->audio_fd, &pvt->alock);
                        pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock); 
 		}
 
