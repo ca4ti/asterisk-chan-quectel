@@ -598,7 +598,7 @@ static int pdiscovery_get_info(const char * port, const struct pdiscovery_reques
 	int fail = 1;
 	char * lock_file;
 
-	int fd = opentty(port, &lock_file);
+	int fd = opentty(port, &lock_file, 0);
 	if(fd >= 0) {
 		unsigned want_imei = req->imei && res->imei == NULL;		// 1 && 0
 		unsigned want_imsi = req->imsi && res->imsi == NULL;		// 1 && 1

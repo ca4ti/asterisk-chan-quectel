@@ -271,7 +271,7 @@ EXPORT_DECL void pvt_reload(restate_time_t when);
 EXPORT_DECL int pvt_enabled(const struct pvt * pvt);
 EXPORT_DECL void pvt_try_restate(struct pvt * pvt);
 
-EXPORT_DECL int opentty (const char* dev, char ** lockfile);
+EXPORT_DECL int opentty (const char* dev, char ** lockfile, int typ);
 EXPORT_DECL void closetty(int fd, char ** lockfname);
 EXPORT_DECL int lock_try(const char * devname, char ** lockname);
 EXPORT_DECL struct pvt * find_device_ex(struct public_state * state, const char * name);

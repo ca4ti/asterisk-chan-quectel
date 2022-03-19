@@ -336,7 +336,7 @@ EXPORT_DEF void closetty(int fd, char ** lockfname)
 	*lockfname = NULL;
 }
 
-EXPORT_DEF int opentty (const char* dev, char ** lockfile)
+EXPORT_DEF int opentty (const char* dev, char ** lockfile, int typ)
 {
 	int		flags;
 	int		pid;
@@ -385,7 +385,8 @@ EXPORT_DEF int opentty (const char* dev, char ** lockfile)
 		return -1;
 	}
 
-	term_attr.c_cflag = B115200 | CS8 | CREAD | CRTSCTS;
+        if (typ = 1) term_attr.c_cflag = B115200 | CS8 | CREAD | CRTSCTS | CLOCAL;
+	else term_attr.c_cflag = B115200 | CS8 | CREAD | CRTSCTS;
 	term_attr.c_iflag = 0;
 	term_attr.c_oflag = 0;
 	term_attr.c_lflag = 0;
@@ -639,11 +640,7 @@ static void* do_monitor_phone (void* data)
 
                if (strcmp(CONF_UNIQ(pvt, quec_uac),"1") != 0) {
 
-		if (port_status (pvt->audio_fd))
-		{
-		       if (pvt->audio_fd) closetty(pvt->audio_fd, &pvt->alock);
-                       pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock); 
-		}
+
 
                                                               
 		if (port_status (pvt->audio_fd))
@@ -835,7 +832,7 @@ static void pvt_start(struct pvt * pvt)
 	ast_verb(3, "[%s] Trying to connect on %s...\n", PVT_ID(pvt), PVT_STATE(pvt, data_tty));
 
 
-	pvt->data_fd = opentty(PVT_STATE(pvt, data_tty), &pvt->dlock);
+	pvt->data_fd = opentty(PVT_STATE(pvt, data_tty), &pvt->dlock, 0);
 	if (pvt->data_fd < 0) {
 		return;
 	}
@@ -844,7 +841,9 @@ static void pvt_start(struct pvt * pvt)
                                                         }
         else {
 	// TODO: delay until device activate voice call or at pvt_on_create_1st_channel()
-	pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock);
+       
+	if (pvt->is_simcom == 1) pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock, 1);
+        else pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock, 0);
 	if (pvt->audio_fd < 0) {
 		goto cleanup_datafd;
 	                       }
