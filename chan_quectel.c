@@ -842,8 +842,8 @@ static void pvt_start(struct pvt * pvt)
         else {
 	// TODO: delay until device activate voice call or at pvt_on_create_1st_channel()
        
-	if (pvt->is_simcom == 1) pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock, 1);
-        else pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock, 0);
+	pvt->audio_fd = opentty(PVT_STATE(pvt, audio_tty), &pvt->alock, pvt->is_simcom);
+
 	if (pvt->audio_fd < 0) {
 		goto cleanup_datafd;
 	                       }

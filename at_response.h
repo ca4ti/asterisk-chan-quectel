@@ -62,6 +62,7 @@ struct iovec;
 	_( CSCA,        "+CSCA",        "+CSCA:") \
 \
 	_( CLCC,        "+CLCC",        "+CLCC:") \
+	_( RCEND,       "CALLEND",      "REMOTE CALL END") \
 	_( CCWA,        "+CCWA",        "+CCWA:") \
 /* AT_RESPONSES_TABLE */
 

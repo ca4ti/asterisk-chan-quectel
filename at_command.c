@@ -165,7 +165,7 @@ EXPORT_DEF int at_enqueue_initialization(struct cpvt *cpvt, at_cmd_t from_comman
 		ATQ_CMD_DECLARE_ST(CMD_AT_CSSN, cmd19),		/* activate Supplementary Service Notification with CSSI and CSSU */
 		ATQ_CMD_DECLARE_ST(CMD_AT_CMGF, cmd20),		/* Set Message Format */
 
-// 		ATQ_CMD_DECLARE_STI(CMD_AT_CSCS, cmd21),	/* UCS-2 text encoding */
+ 		ATQ_CMD_DECLARE_STI(CMD_AT_CSCS, cmd21),	/* UCS-2 text encoding */
 
 		ATQ_CMD_DECLARE_ST(CMD_AT_CPMS, cmd22),		/* SMS Storage Selection */
 			/* pvt->initialized = 1 after successful of CMD_AT_CNMI */
@@ -607,15 +607,7 @@ EXPORT_DEF int at_enqueue_answer(struct cpvt *cpvt)
              if (pvt->is_simcom) {
 
                 sleep(1);
-                static const char cmd_atve[] = "AT+CPCMREG=1\r";
-                static const at_queue_cmd_t cmds1[] = {
-		ATQ_CMD_DECLARE_STIT(CMD_AT_DDSETEX, cmd_atve, ATQ_CMD_TIMEOUT_MEDIUM, 0),
-		};
-
-	        if (at_queue_insert_const(cpvt, cmds1, ITEMS_OF(cmds1), 1) != 0) {
-		chan_quectel_err = E_QUEUE;
-		return -1;
-	        }
+                voice_enable(pvt);
                                   }
 	return 0;
 }

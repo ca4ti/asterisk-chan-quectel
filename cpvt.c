@@ -85,6 +85,7 @@ EXPORT_DEF void cpvt_free(struct cpvt* cpvt)
 	close(cpvt->rd_pipe[1]);
 	close(cpvt->rd_pipe[0]);
 
+
 	ast_debug (3, "[%s] destroy cpvt for call_idx %d dir %d state '%s' flags %d has%s channel\n",  PVT_ID(pvt), cpvt->call_idx, cpvt->dir, call_state2str(cpvt->state), cpvt->flags, cpvt->channel ? "" : "'t");
 	AST_LIST_TRAVERSE_SAFE_BEGIN(&pvt->chans, found, entry) {
 		if(found == cpvt)
@@ -126,6 +127,38 @@ EXPORT_DEF struct cpvt * pvt_find_cpvt(struct pvt * pvt, int call_idx)
 	}
 
 	return 0;
+}
+
+EXPORT_DEF struct cpvt * active_cpvt(struct pvt * pvt)
+{
+	struct cpvt * cpvt;
+	AST_LIST_TRAVERSE(&pvt->chans, cpvt, entry) {
+		if(CPVT_IS_SOUND_SOURCE(cpvt) || (cpvt)->state == CALL_STATE_INCOMING)
+			return cpvt;
+	}
+
+	return 0;
+}
+
+EXPORT_DEF void voice_enable(struct pvt * pvt)
+{
+                                static const char cmd_atvoice[] = "AT+CPCMREG=1\r";
+                                static const at_queue_cmd_t cmds1[] = {
+		                ATQ_CMD_DECLARE_STIT(CMD_AT_DDSETEX, cmd_atvoice, ATQ_CMD_TIMEOUT_MEDIUM, 0),
+		                                                       }; 
+	                        at_queue_insert_const(&pvt->sys_chan, cmds1, ITEMS_OF(cmds1), 1);  
+
+}
+
+EXPORT_DEF void voice_disable(struct pvt * pvt)
+{
+
+                                static const char cmd_atvoice[] = "AT+CPCMREG=0\r";
+                                static const at_queue_cmd_t cmds1[] = {
+		                ATQ_CMD_DECLARE_STIT(CMD_AT_DDSETEX0, cmd_atvoice, ATQ_CMD_TIMEOUT_MEDIUM, 0),
+		                                                       };
+	                        at_queue_insert_const(&pvt->sys_chan, cmds1, ITEMS_OF(cmds1), 1);  
+
 }
 
 #/* */
