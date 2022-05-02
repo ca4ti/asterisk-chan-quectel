@@ -231,6 +231,7 @@ static int at_response_ok (struct pvt* pvt, at_res_t res)
 
 				pvt->has_voice = 1;
                                 pvt->is_simcom = 1;
+                                pvt->t0 = 0;
 
                                 static const char cmd_atrcend[] = "AT$QCRCIND=1\r";
                                 static const at_queue_cmd_t cmds1[] = {
@@ -303,6 +304,7 @@ static int at_response_ok (struct pvt* pvt, at_res_t res)
 				pvt->cwaiting = 0;
 				break;
 			case CMD_AT_DDSETEX:
+                                pvt->t0 = 0;
 				ast_debug (1, "[%s] %s sent successfully\n", PVT_ID(pvt), at_cmd2str (ecmd->cmd));
 				if (!pvt->initialized)
 				{
@@ -313,6 +315,7 @@ static int at_response_ok (struct pvt* pvt, at_res_t res)
 				}
 				break;
 			case CMD_AT_DDSETEX0:
+                                pvt->t0 = 0;
 				ast_debug (1, "[%s] %s sent successfully\n", PVT_ID(pvt), at_cmd2str (ecmd->cmd));
 				break;
 			case CMD_AT_CHUP:
@@ -574,23 +577,27 @@ static int at_response_error (struct pvt* pvt, at_res_t res)
 
 			case CMD_AT_DDSETEX:
                                 log_cmd_response_error(pvt, ecmd, "[%s] %s Enable audio failed, retrying...\n", PVT_ID(pvt), at_cmd2str(ecmd->cmd));
-                                sleep(1);
-                                static const char cmd_atvoice[] = "AT+CPCMREG=1\r";
-                                static const at_queue_cmd_t cmds1[] = {
-		                ATQ_CMD_DECLARE_STIT(CMD_AT_DDSETEX, cmd_atvoice, ATQ_CMD_TIMEOUT_MEDIUM, 0),
-		                                                       };
-	                        at_queue_insert_const(&pvt->sys_chan, cmds1, ITEMS_OF(cmds1), 1);
+
+                                if (pvt->t0 >= 5) {
+                                pvt->t0 = 0;
 				break;
+                                }
+                                sleep(1);
+                                pvt->t0 += 1;
+                                voice_enable(pvt);
+                                break;                                
+                                
 
 			case CMD_AT_DDSETEX0:
 //                              log_cmd_response_error(pvt, ecmd, "[%s] Disable audio with %s failed, retrying...\n", PVT_ID(pvt), at_cmd2str(ecmd->cmd));
-                                sleep(1);
-                                static const char cmd_atvoice0[] = "AT+CPCMREG=0\r";
-                                static const at_queue_cmd_t cmds0[] = {
-		                ATQ_CMD_DECLARE_STIT(CMD_AT_DDSETEX0, cmd_atvoice0, ATQ_CMD_TIMEOUT_MEDIUM, 0),
-		                                                       };
-	                        at_queue_insert_const(&pvt->sys_chan, cmds0, ITEMS_OF(cmds0), 1);
+                                if (pvt->t0 >= 5) {
+                                pvt->t0 = 0;
 				break;
+                                }
+                                sleep(1);
+                                pvt->t0 += 1;
+                                voice_disable(pvt);
+                                break;
 
 			case CMD_AT_CHUP:
 			case CMD_AT_CHLD_1x:
