@@ -888,7 +888,61 @@ e_return:
 		f.offset = AST_FRIENDLY_OFFSET;
 		f.src = AST_MODULE;
 		f.mallocd = 0;
+		if (pvt->dsp)
+		{
+                        struct ast_frame*	p;
+			p = ast_dsp_process (channel, pvt->dsp, &f);
+			if ((p->frametype == AST_FRAME_DTMF_END) || (p->frametype == AST_FRAME_DTMF_BEGIN))
+			{
+				if ((p->subclass_integer == 'm') || (p->subclass_integer == 'u'))
+				{
+					p->frametype = AST_FRAME_NULL;
+					p->subclass_integer = 0;
+						ast_mutex_unlock (&pvt->lock);
 
+	                                        return p;
+				}
+				if(p->frametype == AST_FRAME_DTMF_BEGIN)
+				{
+					pvt->dtmf_begin_time = ast_tvnow();
+				}
+				else if (p->frametype == AST_FRAME_DTMF_END)
+				{
+					if(!ast_tvzero(pvt->dtmf_begin_time) && ast_tvdiff_ms(ast_tvnow(), pvt->dtmf_begin_time) < CONF_SHARED(pvt, mindtmfgap))
+					{
+						ast_debug(1, "[%s] DTMF char %c ignored min gap %d > %ld\n", PVT_ID(pvt), p->subclass_integer, CONF_SHARED(pvt, mindtmfgap), (long)ast_tvdiff_ms(ast_tvnow(), pvt->dtmf_begin_time));
+						p->frametype = AST_FRAME_NULL;
+						p->subclass_integer = 0;
+					}
+					else if(p->len < CONF_SHARED(pvt, mindtmfduration))
+					{
+						ast_debug(1, "[%s] DTMF char %c ignored min duration %d > %ld\n", PVT_ID(pvt), p->subclass_integer, CONF_SHARED(pvt, mindtmfduration), p->len);
+						p->frametype = AST_FRAME_NULL;
+						p->subclass_integer = 0;
+					}
+					else if(p->subclass_integer == pvt->dtmf_digit
+							&&
+						!ast_tvzero(pvt->dtmf_end_time)
+							&&
+						ast_tvdiff_ms(ast_tvnow(), pvt->dtmf_end_time) < CONF_SHARED(pvt, mindtmfinterval))
+					{
+						ast_debug(1, "[%s] DTMF char %c ignored min interval %d > %ld\n", PVT_ID(pvt), p->subclass_integer, CONF_SHARED(pvt, mindtmfinterval), (long)ast_tvdiff_ms(ast_tvnow(), pvt->dtmf_end_time));
+						p->frametype = AST_FRAME_NULL;
+						p->subclass_integer = 0;
+					}
+					else
+					{
+						ast_debug(1, "[%s] Got DTMF char %c\n",PVT_ID(pvt), p->subclass_integer);
+						pvt->dtmf_digit = p->subclass_integer;
+						pvt->dtmf_end_time = ast_tvnow();
+					}
+
+				}
+					ast_mutex_unlock (&pvt->lock);
+
+	                                return p;
+			}
+		}
 	}
 
 	ast_mutex_unlock (&pvt->lock);
