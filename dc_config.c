@@ -52,7 +52,7 @@ static int dc_uconfig_fill(struct ast_config * cfg, const char * cat, struct dc_
 		imsi = NULL;
 		}
 
-	if(!audio_tty && !quec_uac)
+	if(!audio_tty && !quec_uac && !imei && !imsi)
 	{
 		ast_log (LOG_ERROR, "Skipping device %s. Missing required audio setting\n", cat);
 		return 1;

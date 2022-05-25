@@ -68,7 +68,8 @@ static const struct pdiscovery_device device_ids[] = {
         { 0x12d1, 0x14ac, { 4, 3, /* 0 */ } },          /* E153Du-1 : thanks mghadam */
 	{ 0x12d1, 0x1436, { 4, 3, /* 0 */ } },		/* E1750 */
 	{ 0x12d1, 0x1506, { 3, 2, /* 0 */ } },		/* E171 firmware 21.x : thanks Sergey Ivanov */
-        { 0x2c7c, 0x0125, { 1, 4, /* 0 */ } },          /* Quectel EC25-A LTE modem : for testing */
+        { 0x2c7c, 0x0125, { 2, 1, /* 0 */ } },          /* Quectel EC25 */
+        { 0x1e0e, 0x9001, { 2, 4, /* 0 */ } },          /* Simcom Sim7600 */
 };
 
 static struct discovery_cache cache;
@@ -449,6 +450,7 @@ static char * pdiscovery_handle_ati(const char * devname, char * str)
 static char * pdiscovery_handle_cimi(const char * devname, char * str)
 {
 	char * imsi = NULL;
+        char imsi2[15];
 	enum states {
 		STATE_BEGIN,
 		STATE_CR1,
@@ -456,6 +458,10 @@ static char * pdiscovery_handle_cimi(const char * devname, char * str)
 		STATE_DIGITS,
 		STATE_CR2,
 	} state;
+        if (sscanf (str, "AT+CIMI %s OK", &imsi2) == 1) {
+        imsi = ast_strdup(imsi2);
+        return imsi;
+        }
 
 	for(state = STATE_BEGIN; *str; ++str) {
 		switch(state) {
