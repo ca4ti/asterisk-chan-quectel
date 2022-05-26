@@ -423,25 +423,17 @@ static const struct pdiscovery_device * pdiscovery_lookup_ids(const char * devna
 #/* 0D 0A IMEI: <15 digits> 0D 0A */
 static char * pdiscovery_handle_ati(const char * devname, char * str)
 {
-	static const char IMEI[] = "\r\nIMEI:";
-	char * imei = strstr(str, IMEI);
+	char * imei = NULL;
+        char imei2[15];
 
-	if(imei) {
-		imei += STRLEN(IMEI);
-		while(imei[0] == ' ')
-			imei++;
-		str = imei;
-
-		while(str[0] >= '0' && str[0] <= '9')
-			str++;
-		if((str - imei) == IMEI_SIZE && str[0] == '\r' && str[1] == '\n') {
-			str[0] = 0;
-			imei = ast_strdup(imei);
-			str[0] = '\r';
-			ast_debug(4, "[%s discovery] found IMEI %s\n", devname, imei);
-			return imei;
-		}
-	}
+        if (sscanf (str, "AT+GSN %s OK", &imei2) == 1) {
+        imei = ast_strdup(imei2);
+        return imei;
+        }
+        if (sscanf (str, " %s OK", &imei2) == 1) {
+        imei = ast_strdup(imei2);
+        return imei;
+        }
 
 	return NULL;
 }
@@ -451,63 +443,15 @@ static char * pdiscovery_handle_cimi(const char * devname, char * str)
 {
 	char * imsi = NULL;
         char imsi2[15];
-	enum states {
-		STATE_BEGIN,
-		STATE_CR1,
-		STATE_LF1,
-		STATE_DIGITS,
-		STATE_CR2,
-	} state;
+
         if (sscanf (str, "AT+CIMI %s OK", &imsi2) == 1) {
         imsi = ast_strdup(imsi2);
         return imsi;
         }
-
-	for(state = STATE_BEGIN; *str; ++str) {
-		switch(state) {
-			case STATE_BEGIN:
-				if(*str == '\r')
-					state++;
-				break;
-			case STATE_CR1:
-				if(*str == '\n')
-					state++;
-				else
-					state = STATE_BEGIN;
-				break;
-			case STATE_LF1:
-				if(*str >= '0' && *str <= '9') {
-					state++;
-					imsi = str;
-				} else if(*str == '\r')
-					state = STATE_CR1;
-				else
-					state = STATE_BEGIN;
-				break;
-			case STATE_DIGITS:
-				if(*str >= '0' && *str <= '9')
-					;
-				else if(*str == '\r') {
-					if((str - imsi) == IMSI_SIZE)
-						state++;
-					else
-						state = STATE_CR1;
-				} else
-					state = STATE_BEGIN;
-				break;
-			case STATE_CR2:
-				if(*str == '\n') {
-					str[-1] = 0;
-					imsi = ast_strdup(imsi);
-					str[-1] = '\r';
-					ast_debug(4, "[%s discovery] found IMSI %s\n", devname, imsi);
-					return imsi;
-				}
-				/* fall through */
-			default:
-				state = STATE_BEGIN;
-		}
-	}
+        if (sscanf (str, " %s OK", &imsi2) == 1) {
+        imsi = ast_strdup(imsi2);
+        return imsi;
+        }
 
 	return NULL;
 }
@@ -533,9 +477,9 @@ static int pdiscovery_handle_response(const struct pdiscovery_request * req, con
 
 		ast_debug(4, "[%s discovery] < %s\n", req->name, str);
 		done = strstr(str, "OK") != NULL || strstr(str, "ERROR") != NULL;
-		if(req->imei && res->imei == NULL)
+		if(done && req->imei && res->imei == NULL)
 			res->imei = pdiscovery_handle_ati(req->name, str);
-		if(req->imsi && res->imsi == NULL)
+		if(done && req->imsi && res->imsi == NULL)
 			res->imsi = pdiscovery_handle_cimi(req->name, str);
 		/* restore tail of string for collect data in buffer */
 		str[len] = sym;
@@ -592,8 +536,8 @@ static int pdiscovery_get_info(const char * port, const struct pdiscovery_reques
 		unsigned	length;
 	} cmds[] = {
 		{ "AT+CIMI\r", 8 },		/* IMSI */
-		{ "ATI\r", 4 },			/* IMEI */
-		{ "ATI; +CIMI\r" , 11 },	/* IMSI + IMEI */
+		{ "AT+GSN\r", 7 },			/* IMEI */
+		{ "AT+GSN; +CIMI\r" , 14 },	/* IMSI + IMEI */
 	};
 
 	static const int want_map[2][2] = {
