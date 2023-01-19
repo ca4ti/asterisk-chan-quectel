@@ -376,7 +376,7 @@ EXPORT_DEF int at_enqueue_ussd(struct cpvt *cpvt, const char *code)
 		chan_quectel_err = E_UNKNOWN;
 		return -1;
 	}
-	ast_log (LOG_INFO, "USSD command passed is %s\n", at_cmd.data);
+	ast_log (LOG_ERROR, "USSD command passed is %s\n", at_cmd.data);
 
 	if (at_queue_insert(cpvt, &at_cmd, 1, 0) != 0) {
 		chan_quectel_err = E_QUEUE;
