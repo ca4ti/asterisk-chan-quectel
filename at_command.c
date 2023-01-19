@@ -342,9 +342,11 @@ EXPORT_DEF int at_enqueue_ussd(struct cpvt *cpvt, const char *code)
 	memcpy (buf, cmd, STRLEN(cmd));
 	length = STRLEN(cmd);
 	int code_len = strlen(code);
+	memcpy (buf + length,code,code_len+1);
+        length += code_len;
 
 	// use 7 bit encoding. 15 is 00001111 in binary and means 'Language using the GSM 7 bit default alphabet; Language unspecified' accodring to GSM 23.038
-	uint16_t code16[code_len * 2];
+/*	uint16_t code16[code_len * 2];
 	uint8_t code_packed[4069];
 	res = utf8_to_ucs2(code, code_len, code16, sizeof(code16));
 	if (res < 0) {
@@ -364,7 +366,7 @@ EXPORT_DEF int at_enqueue_ussd(struct cpvt *cpvt, const char *code)
 	res = (res + 1) / 2;
 	hexify(code_packed, res, buf + STRLEN(cmd));
 	length += res * 2;
-
+*/
 	memcpy(buf + length, cmd_end, STRLEN(cmd_end)+1);
 	length += STRLEN(cmd_end);
 
@@ -374,6 +376,7 @@ EXPORT_DEF int at_enqueue_ussd(struct cpvt *cpvt, const char *code)
 		chan_quectel_err = E_UNKNOWN;
 		return -1;
 	}
+	ast_log (LOG_INFO, "USSD command passed is %s\n", at_cmd.data);
 
 	if (at_queue_insert(cpvt, &at_cmd, 1, 0) != 0) {
 		chan_quectel_err = E_QUEUE;
