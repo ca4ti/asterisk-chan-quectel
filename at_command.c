@@ -332,8 +332,8 @@ EXPORT_DEF int at_enqueue_sms(struct cpvt *cpvt, const char *destination, const 
 
 EXPORT_DEF int at_enqueue_ussd(struct cpvt *cpvt, const char *code)
 {
-	static const char cmd[] = "AT+CUSD=1,\"";
-	static const char cmd_end[] = "\",15\r";
+	static const char cmd[] = "AT+CSCS=\"GSM\";+CUSD=1,\"";
+	static const char cmd_end[] = "\",15;+CSCS=\"UCS2\"\r";
 	at_queue_cmd_t at_cmd = ATQ_CMD_DECLARE_DYN(CMD_AT_CUSD);
 	ssize_t res;
 	int length;
