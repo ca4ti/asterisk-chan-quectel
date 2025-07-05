@@ -135,8 +135,9 @@ Other CLI commands:
     quectel reload now
     quectel reload when convenient
 
-[https://forums.quectel.com/t/ec25-au-brazil-lte-not-sucess-call-over-lte-volte/2575/18](https://forums.quectel.com/t/ec25-au-brazil-lte-not-sucess-call-over-lte-volte/2575)
+https://forums.quectel.com/t/ec25-au-brazil-lte-not-sucess-call-over-lte-volte/2575
 
-[https://forums.quectel.com/t/ec25-au-brazil-lte-not-sucess-call-over-lte-volte/2575/20](https://forums.quectel.com/t/ec25-eux-volte-support/16038)
+https://forums.quectel.com/t/ec25-eux-volte-support/16038
+
 
 
